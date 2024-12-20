@@ -2,7 +2,7 @@ import pandas as pd
 import random
 
 # تعداد کاربران
-num_users = 150
+num_users = 50
 
 # توزیع‌های واقعی‌تر برای ویژگی‌ها
 gender_weights = [0.63, 0.37]  # احتمال مرد و زن
@@ -15,26 +15,26 @@ relationship_weights = [0.4, 0.15, 0.06, 0.14, 0.2, 0.03, 0.02]
 
 # ویژگی‌های کاربران
 genders = ["مرد", "زن"]
-categories = ["الکترونیک", "پوشاک و اکسسوری", "خانه و دکور", "زیبایی و بهداشت", "ورزش و تناسب اندام", "کتاب و محصولات آموزشی", "پازل‌ها و بازی‌ها", "لوازم سفر و گردشگری"]
-psychological_traits = ["برون‌گرا", "درون‌گرا", "خلاق و هنری", "منطقی و تحلیل‌گر", "احساسی و حمایتی", "ماجراجو و ورزشکار", "لوکس‌گرا و شیک"]
+categories = ["الکترونیک", "پوشاک و اکسسوری", "خانه و دکور", "زیبایی و بهداشت", "ورزش و تناسب اندام", "کتاب و محصولات آموزشی", "پازل ها و بازی ها", "لوازم سفر و گردشگری"]
+psychological_traits = ["برون گرا", "درون گرا", "خلاق و هنری", "منطقی و تحلیل گر", "احساسی و حمایتی", "ماجراجو و ورزشکار", "لوکس گرا و شیک"]
 materials = ["پارچه", "فلزات", "پلاستیک", "چوبی", "شیشه و سرامیک", "ترکیبی", "خاص"]
-work_styles = ["کلاسیک", "مدرن", "هنری", "لوکس و رسمی", "طبیعت‌محور", "منطقه‌ای", "فانتزی و خاص"]
-occasions = ["تولد", "عروسی", "جشن فارغ‌التحصیلی", "سالگرد", "ارتقا کاری", "مناسبت فردی", "دیگر"]
+work_styles = ["کلاسیک", "مدرن", "هنری", "لوکس و رسمی", "طبیعت محور", "منطقه ای", "فانتزی و خاص"]
+occasions = ["تولد", "عروسی", "جشن فارغ التحصیلی", "سالگرد", "ارتقا کاری", "مناسبت فردی", "دیگر"]
 relationships = ["دوست", "خانواده", "همکار", "آشنا", "همسر", "پارتنر", "افراد خاص"]
 
 # ایجاد دیتاست
 users_data = {
-    "شناسه کاربر": list(range(1, num_users + 1)),
-    "سن": [random.randint(1, 70) for _ in range(num_users)],
-    "جنسیت": random.choices(genders, weights=gender_weights, k=num_users),
-    "اولویت دسته‌بندی 1": random.choices(categories, weights=category_weights, k=num_users),
-    "اولویت دسته‌بندی 2": random.choices(categories, weights=category_weights, k=num_users),
-    "اولویت دسته‌بندی 3": random.choices(categories, weights=category_weights, k=num_users),
-    "ویژگی روان‌شناختی": random.choices(psychological_traits, weights=trait_weights, k=num_users),
-    "علاقه به متریال": random.choices(materials, weights=material_weights, k=num_users),
-    "سبک کاری مورد علاقه": random.choices(work_styles, weights=work_style_weights, k=num_users),
-    "مناسبت هدیه": random.choices(occasions, weights=occasion_weights, k=num_users),
-    "نوع ارتباط با فرد گیرنده هدیه": random.choices(relationships, weights=relationship_weights, k=num_users),
+    "user_id": list(range(1, num_users + 1)),
+    "age": [random.randint(1, 70) for _ in range(num_users)],
+    "gender": random.choices(genders, weights=gender_weights, k=num_users),
+    "category_1": random.choices(categories, weights=category_weights, k=num_users),
+    "category_2": random.choices(categories, weights=category_weights, k=num_users),
+    "category_3": random.choices(categories, weights=category_weights, k=num_users),
+    "psychological_traits": random.choices(psychological_traits, weights=trait_weights, k=num_users),
+    "favorite_material": random.choices(materials, weights=material_weights, k=num_users),
+    "favorite_design": random.choices(work_styles, weights=work_style_weights, k=num_users),
+    "occasions": random.choices(occasions, weights=occasion_weights, k=num_users),
+    "relationship": random.choices(relationships, weights=relationship_weights, k=num_users),
 }
 
 # تبدیل به DataFrame
