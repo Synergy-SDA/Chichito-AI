@@ -1,2 +1,0 @@
-AI repository for the Gift Recommendation E-commerce Platform, Chichito. This part contains a main Content-Based Filtering Model which is a recommender system.
-This repository also contains some models for feature selection and creating dataset.
