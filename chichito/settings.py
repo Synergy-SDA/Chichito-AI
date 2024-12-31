@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'ai',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -74,11 +76,20 @@ WSGI_APPLICATION = 'chichito.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+    'default': {  # Local SQLite database
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    },
+    'external': {  # External PostgreSQL database
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'LIARA_URL is not set.'),
+        'USER': os.getenv('DB_USER', 'LIARA_URL is not set.'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'LIARA_URL is not set.'),
+        'HOST': os.getenv('DB_HOST', 'LIARA_URL is not set.'),
+        'PORT': os.getenv('DB_PORT', 'LIARA_URL is not set.'),
+    },
 }
+
 
 
 # Password validation
@@ -98,6 +109,10 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
 
 
 # Internationalization

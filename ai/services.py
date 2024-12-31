@@ -14,20 +14,41 @@ class Evaluation:
         self.user_data = pd.DataFrame(self.user_data)
 
     def product_data(self):
-        products = Product.objects.prefetch_related('features', queryset=FeatureValue.objects.sele)
-        ('feature').all()
-        products_data = []
-        
+        # Fetch products
+        products = ExternalProduct.objects.using('external').all()
+        product_data = []
+
         for product in products:
+            # Fetch features for each product
+            features = FeatureValue.objects.using('external').filter(product=product)
+            feature_dict = {f.feature_name: f.value for f in features if f.feature_name in ["نوع رنگ", "سبک طراحی", "کاربرد", "جنسیت", "متریال"]}
+
+            # Combine product and feature data
             product_info = {
-                "category": product.category,
-                "colors": 
+                "id": product.id,
+                "categories": product.category,  # Add categories field
+                "نوع رنگ": feature_dict.get("نوع رنگ", None),
+                "سبک طراحی": feature_dict.get("سبک طراحی", None),
+                "کاربرد": feature_dict.get("کاربرد", None),
+                "جنسیت": feature_dict.get("جنسیت", None),
+                "متریال": feature_dict.get("متریال", None),
             }
-            
-            
+            product_data.append(product_info)
 
+        # Convert to DataFrame for further processing
+        self.products_data = pd.DataFrame(product_data)
 
+        # Rename columns according to product_mapping keys
+        column_rename_mapping = {
+            "نوع رنگ": "colors",
+            "سبک طراحی": "design_styles",
+            "کاربرد": "usages",
+            "جنسیت": "genders",
+            "متریال": "materials"
+        }
+        self.products_data.rename(columns=column_rename_mapping, inplace=True)
 
+    
     def encoding(self):
         def manual_encoder(df, mapping_dict):
             for col, mapping in mapping_dict.items():
@@ -65,18 +86,25 @@ class Evaluation:
         except Exception as e:
             print(f"Error loading model: {e}")
     def evaluate(self):
-        cache_key = f"user_predictions_{hash(str(self.user_data))}"
-        cached_results = cache.get(cache_key)
-        if cached_results:
-            return cached_results
-
         user_data_np = self.encoded_user_data.to_numpy()
-        product_data_np = self.encoded_products_data.to_numpy()
+        product_data_np = self.encoded_products_data.drop(columns=["id"]).to_numpy()
         predictions = self.model.predict([product_data_np, np.repeat(user_data_np, len(product_data_np), axis=0)])
         top_predictions = np.argsort(-predictions.flatten())[:10]
-        results = self.encoded_products_data.iloc[top_predictions]
+        top_products = self.encoded_products_data.iloc[top_predictions]
 
-        # cache.set(cache_key, results, timeout=3600)  # Cache for 1 hour
+        results = []
+        for index, product in top_products.iterrows():
+            product_info = {
+                "id": product["id"],
+                "categories": product["categories"],
+                "colors": product["colors"],
+                "design_styles": product["design_styles"],
+                "usages": product["usages"],
+                "genders": product["genders"],
+                "materials": product["materials"]
+            }
+            results.append(product_info)
+
         return results
 
 
