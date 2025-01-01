@@ -2,10 +2,10 @@ from rest_framework import serializers
 
 class UserSerializer(serializers.Serializer):
     age = serializers.IntegerField()
+    gender = serializers.ChoiceField(choices=["مرد", "زن"])
     category_1 = serializers.ChoiceField(choices=["الکترونیک", "پوشاک و اکسسوری", "خانه و دکور", "زیبایی و بهداشت", "ورزش و تناسب اندام", "کتاب و محصولات آموزشی", "پازل ها و بازی ها", "لوازم سفر و گردشگری"])
     category_2 = serializers.ChoiceField(choices=["الکترونیک", "پوشاک و اکسسوری", "خانه و دکور", "زیبایی و بهداشت", "ورزش و تناسب اندام", "کتاب و محصولات آموزشی", "پازل ها و بازی ها", "لوازم سفر و گردشگری"])
     category_3 = serializers.ChoiceField(choices=["الکترونیک", "پوشاک و اکسسوری", "خانه و دکور", "زیبایی و بهداشت", "ورزش و تناسب اندام", "کتاب و محصولات آموزشی", "پازل ها و بازی ها", "لوازم سفر و گردشگری"])
-    gender = serializers.ChoiceField(choices=["مرد", "زن"])
     psychological_traits = serializers.ChoiceField(choices=["برون گرا", "درون گرا", "خلاق و هنری", "منطقی و تحلیل گر", "احساسی و حمایتی", "ماجراجو و ورزشکار", "لوکس گرا و شیک"])
     favorite_material = serializers.ChoiceField(choices=["پارچه", "فلزات", "پلاستیک", "چوبی", "شیشه و سرامیک", "ترکیبی", "خاص"])
     favorite_design = serializers.ChoiceField(choices=["کلاسیک", "مدرن", "هنری", "لوکس و رسمی", "طبیعت محور", "منطقه ای", "فانتزی و خاص"])

@@ -28,9 +28,10 @@ class UserInformationAPIView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             # serializer.save()
-            model = Evaluation(serializer)
+            model = Evaluation(serializer.data)
             model.get_user_data()
             model.product_data()
+            model.load_pretrained_model()
             model.encoding()
             results = model.evaluate()
             if not results:

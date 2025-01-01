@@ -14,25 +14,15 @@ class Evaluation:
     
 
     def get_user_data(self):
-        self.user_data = pd.DataFrame(self.user_data)
-        column_rename_mapping = {
-            "دسته_بندی_۱": "category_1",
-            "دسته_بندی_۲": "category_2",
-            "دسته_بندی_۳": "category_3",
-            "جنسیت": "gender",
-            "ویژگی_های_روانی": "psychological_traits",
-            "متریال_مورد_علاقه": "favorite_material",
-            "طراحی_مورد_علاقه": "favorite_design",
-            "مناسبت_ها": "occasions",
-            "روابط": "relationship"
-        }
+        print(self.user_data)
+        self.user_data = pd.read_json(self.user_data)
+        print(self.user_data)
 
-        # Rename columns in user_data
-        self.user_data.rename(columns=column_rename_mapping, inplace=True)
-
+       
     def product_data(self):
         # Fetch products
-        user_gender = self.user_data["جنسیت"].iloc[0]
+        # print(self.user_data.head())
+        user_gender = self.user_data["gender"].iloc[0]
 
         # Fetch products with filtering based on user gender
         if user_gender == "مرد":
