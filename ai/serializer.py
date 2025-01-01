@@ -10,6 +10,7 @@ class UserSerializer(serializers.Serializer):
     favorite_material = serializers.ChoiceField(choices=["پارچه", "فلزات", "پلاستیک", "چوبی", "شیشه و سرامیک", "ترکیبی", "خاص"])
     favorite_design = serializers.ChoiceField(choices=["کلاسیک", "مدرن", "هنری", "لوکس و رسمی", "طبیعت محور", "منطقه ای", "فانتزی و خاص"])
     occasions = serializers.ChoiceField(choices=["تولد", "عروسی", "جشن فارغ التحصیلی", "سالگرد", "ارتقا کاری", "مناسبت فردی", "دیگر"])
+    relationship = serializers.ChoiceField(choices = ["دوست", "خانواده", "همکار", "آشنا", "همسر", "پارتنر", "افراد خاص"])
     def validate(self, data):
         """
         Check that all fields have values within the specified choices.

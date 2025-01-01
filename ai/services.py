@@ -1,5 +1,3 @@
-
-from django.core.cache import cache
 import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
@@ -7,42 +5,57 @@ import numpy as np
 from .models import *
 from django.core.cache import cache
 from datetime import timedelta
+import os
 
 class Evaluation:
     def __init__(self, user_data):
         self.user_data = user_data
+        self.products_data = None
+        self.encoded_user_data = None
+        self.encoded_products_data = None
+        self.model = None        
     
 
     def get_user_data(self):
-        print(self.user_data)
-        self.user_data = pd.read_json(self.user_data)
-        print(self.user_data)
+        diction = {'age': self.user_data['age'], 'gender': self.user_data['gender'],
+                   'category_1': self.user_data['category_1'], 'category_2': self.user_data['category_2'],
+                   'category_3': self.user_data['category_3'], 'psychological_traits': self.user_data['psychological_traits'],
+                   'favorite_material': self.user_data['favorite_material'], 'favorite_design': self.user_data['favorite_design'],
+                   'occasions': self.user_data['occasions'], 'relationship': self.user_data['relationship']}
+        print(diction)
+        self.user_data = pd.DataFrame(diction, index = np.arange(1))
+        # print(self.user_data)
 
        
     def product_data(self):
-        # Fetch products
-        # print(self.user_data.head())
+        # Get user gender from user data
         user_gender = self.user_data["gender"].iloc[0]
 
         # Fetch products with filtering based on user gender
         if user_gender == "مرد":
-            products = ExternalProduct.objects.using('external').filter(features__feature_name="جنسیت", features__value__in=["مردانه", "خنثی"]).distinct()
+            products = ExternalProduct.objects.using('external').filter(
+                external_product_features__feature_value__feature__name="جنسیت",
+                external_product_features__feature_value__value__in=["مردانه", "خنثی"]
+            ).distinct()
         elif user_gender == "زن":
-            products = ExternalProduct.objects.using('external').filter(features__feature_name="جنسیت", features__value__in=["زنانه", "خنثی"]).distinct()
+            products = ExternalProduct.objects.using('external').filter(
+                external_product_features__feature_value__feature__name="جنسیت",
+                external_product_features__feature_value__value__in=["زنانه", "خنثی"]
+            ).distinct()
         else:
             products = ExternalProduct.objects.using('external').all()
-        
+
         product_data = []
 
         for product in products:
             # Fetch features for each product
-            features = FeatureValue.objects.using('external').filter(product=product)
-            feature_dict = {f.feature_name: f.value for f in features if f.feature_name in ["نوع رنگ", "سبک طراحی", "کاربرد", "جنسیت", "متریال"]}
+            product_feature_values = ProductFeatureValue.objects.using('external').filter(product=product).select_related('feature_value__feature')
+            feature_dict = {pfv.feature_value.feature.name: pfv.feature_value.value for pfv in product_feature_values if pfv.feature_value.feature.name in ["نوع رنگ", "سبک طراحی", "کاربرد", "جنسیت", "متریال"]}
 
             # Combine product and feature data
             product_info = {
                 "id": product.id,
-                "categories": product.category,  # Add categories field
+                "category": product.category.name if product.category else None,  # Get category name
                 "نوع رنگ": feature_dict.get("نوع رنگ", None),
                 "سبک طراحی": feature_dict.get("سبک طراحی", None),
                 "کاربرد": feature_dict.get("کاربرد", None),
@@ -56,6 +69,7 @@ class Evaluation:
 
         # Rename columns according to product_mapping keys
         column_rename_mapping = {
+            "category": "categories",
             "نوع رنگ": "colors",
             "سبک طراحی": "design_styles",
             "کاربرد": "usages",
@@ -93,11 +107,12 @@ class Evaluation:
         "genders": {v: i for i, v in enumerate(["مردانه", "زنانه", "خنثی"])}
         }
 
-        self.encoded_user_data = manual_encoder(self.encoded_user_data, user_mapping)
-        self.encoded_products_data = manual_encoder(self.encoded_products_data, product_mapping)
+        self.encoded_user_data = manual_encoder(self.user_data, user_mapping)
+        self.encoded_products_data = manual_encoder(self.products_data, product_mapping)
     def load_pretrained_model(self):
         try:
-            self.model = keras.models.load_model("./best_model.keras")
+            model_path = os.path.join(os.path.dirname(__file__), "best_model.keras")
+            self.model = keras.models.load_model(model_path)
             print("Model loaded successfully!")
         except Exception as e:
             print(f"Error loading model: {e}")
@@ -106,36 +121,44 @@ class Evaluation:
         cached_results = cache.get(cache_key)
         if cached_results:
             return cached_results
+
         user_data_np = self.encoded_user_data.to_numpy()
         product_data_np = self.encoded_products_data.drop(columns=["id"]).to_numpy()
-        predictions = self.model.predict([product_data_np, np.repeat(user_data_np, len(product_data_np), axis=0)])
-        top_predictions = np.argsort(-predictions.flatten())[:10]
+
+        # Ensure the input data matches the expected shape
+        expected_user_shape = (None, 10)  # User input shape
+        expected_product_shape = (None, 6)  # Product input shape
+
+        if user_data_np.shape[1] != expected_user_shape[1]:
+            raise ValueError(f"Expected user data shape {expected_user_shape}, but got {user_data_np.shape}")
+
+        if product_data_np.shape[1] != expected_product_shape[1]:
+            raise ValueError(f"Expected product data shape {expected_product_shape}, but got {product_data_np.shape}")
+
+        predictions = []
+        for product in product_data_np:
+            repeated_user_data_np = np.tile(user_data_np, (1, 1))
+            prediction = self.model.predict([product.reshape(1, -1), repeated_user_data_np])
+            predictions.append(prediction[0][0])
+
+        top_predictions = np.argsort(-np.array(predictions))[:10]
         top_products = self.encoded_products_data.iloc[top_predictions]
 
         product_ids = top_products["id"].tolist()
-        products = ExternalProduct.objects.filter(id__in=product_ids).prefetch_related('features')
+        products = ExternalProduct.objects.using('external').filter(id__in=product_ids)
 
         results = []
         for product in products:
+            # Combine product data
             product_info = {
                 "id": product.id,
                 "name": product.name,
-                "category": product.category,
+                "category": product.category.name if product.category else None,  # Get category name
                 "price": product.price,
                 "count_exist": product.count_exist,
                 "is_available": product.is_available,
-                "features": [
-                    {
-                        "feature_name": feature.feature_name,
-                        "value": feature.value
-                    }
-                    for feature in product.features.all()
-                ]
             }
             results.append(product_info)
 
         cache.set(cache_key, results, timeout=15*60)
         return results
-
-
-    
