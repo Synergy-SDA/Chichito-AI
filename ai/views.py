@@ -16,6 +16,15 @@ class UserInformationAPIView(APIView):
         }
     )
     def post(self, request, *args, **kwargs):
+        if not request.data:
+            cache_key = f"user_predictions_{hash(str(request.user))}"
+            cached_results = cache.get(cache_key)
+            if cached_results:
+                return Response(cached_results, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "No cached products found."}, status=status.HTTP_404_NOT_FOUND)
+        
+
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             # serializer.save()
@@ -23,6 +32,10 @@ class UserInformationAPIView(APIView):
             model.get_user_data()
             model.product_data()
             model.encoding()
-            model.evaluate()
-            return Response(1, status=status.HTTP_200_OK)
+            results = model.evaluate()
+            if not results:
+                return Response({"error": "No products found for the given user data."}, status=status.HTTP_404_NOT_FOUND)
+            
+            return Response(results, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
+    

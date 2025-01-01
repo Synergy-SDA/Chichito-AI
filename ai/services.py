@@ -5,6 +5,9 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 from .models import *
+from django.core.cache import cache
+from datetime import timedelta
+
 class Evaluation:
     def __init__(self, user_data):
         self.user_data = user_data
@@ -12,10 +15,33 @@ class Evaluation:
 
     def get_user_data(self):
         self.user_data = pd.DataFrame(self.user_data)
+        column_rename_mapping = {
+            "دسته_بندی_۱": "category_1",
+            "دسته_بندی_۲": "category_2",
+            "دسته_بندی_۳": "category_3",
+            "جنسیت": "gender",
+            "ویژگی_های_روانی": "psychological_traits",
+            "متریال_مورد_علاقه": "favorite_material",
+            "طراحی_مورد_علاقه": "favorite_design",
+            "مناسبت_ها": "occasions",
+            "روابط": "relationship"
+        }
+
+        # Rename columns in user_data
+        self.user_data.rename(columns=column_rename_mapping, inplace=True)
 
     def product_data(self):
         # Fetch products
-        products = ExternalProduct.objects.using('external').all()
+        user_gender = self.user_data["جنسیت"].iloc[0]
+
+        # Fetch products with filtering based on user gender
+        if user_gender == "مرد":
+            products = ExternalProduct.objects.using('external').filter(features__feature_name="جنسیت", features__value__in=["مردانه", "خنثی"]).distinct()
+        elif user_gender == "زن":
+            products = ExternalProduct.objects.using('external').filter(features__feature_name="جنسیت", features__value__in=["زنانه", "خنثی"]).distinct()
+        else:
+            products = ExternalProduct.objects.using('external').all()
+        
         product_data = []
 
         for product in products:
@@ -86,25 +112,39 @@ class Evaluation:
         except Exception as e:
             print(f"Error loading model: {e}")
     def evaluate(self):
+        cache_key = f"user_predictions_{hash(str(self.user_data))}"
+        cached_results = cache.get(cache_key)
+        if cached_results:
+            return cached_results
         user_data_np = self.encoded_user_data.to_numpy()
         product_data_np = self.encoded_products_data.drop(columns=["id"]).to_numpy()
         predictions = self.model.predict([product_data_np, np.repeat(user_data_np, len(product_data_np), axis=0)])
         top_predictions = np.argsort(-predictions.flatten())[:10]
         top_products = self.encoded_products_data.iloc[top_predictions]
 
+        product_ids = top_products["id"].tolist()
+        products = ExternalProduct.objects.filter(id__in=product_ids).prefetch_related('features')
+
         results = []
-        for index, product in top_products.iterrows():
+        for product in products:
             product_info = {
-                "id": product["id"],
-                "categories": product["categories"],
-                "colors": product["colors"],
-                "design_styles": product["design_styles"],
-                "usages": product["usages"],
-                "genders": product["genders"],
-                "materials": product["materials"]
+                "id": product.id,
+                "name": product.name,
+                "category": product.category,
+                "price": product.price,
+                "count_exist": product.count_exist,
+                "is_available": product.is_available,
+                "features": [
+                    {
+                        "feature_name": feature.feature_name,
+                        "value": feature.value
+                    }
+                    for feature in product.features.all()
+                ]
             }
             results.append(product_info)
 
+        cache.set(cache_key, results, timeout=15*60)
         return results
 
 
