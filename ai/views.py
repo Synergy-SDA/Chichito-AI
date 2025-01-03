@@ -17,7 +17,8 @@ class UserInformationAPIView(APIView):
     )
     def post(self, request, *args, **kwargs):
         if not request.data:
-            cache_key = f"user_predictions_{hash(str(request.user))}"
+            cache_key = f"user_predictions_{request.user.id}"
+            print(f"user_predictions_{request.user.id}")
             cached_results = cache.get(cache_key)
             if cached_results:
                 return Response(cached_results, status=status.HTTP_200_OK)
@@ -28,7 +29,7 @@ class UserInformationAPIView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             # serializer.save()
-            model = Evaluation(serializer.data)
+            model = Evaluation(serializer.data, request.user)
             model.get_user_data()
             model.product_data()
             model.load_pretrained_model()

@@ -8,7 +8,8 @@ from datetime import timedelta
 import os
 
 class Evaluation:
-    def __init__(self, user_data):
+    def __init__(self, user_data, user):
+        self.user = user
         self.user_data = user_data
         self.products_data = None
         self.encoded_user_data = None
@@ -117,10 +118,10 @@ class Evaluation:
         except Exception as e:
             print(f"Error loading model: {e}")
     def evaluate(self):
-        cache_key = f"user_predictions_{hash(str(self.user_data))}"
-        cached_results = cache.get(cache_key)
-        if cached_results:
-            return cached_results
+        cache_key = f"user_predictions_{self.user.id}"
+        # cached_results = cache.get(cache_key)
+        # if cached_results:
+        #     return cached_results
 
         user_data_np = self.encoded_user_data.to_numpy()
         product_data_np = self.encoded_products_data.drop(columns=["id"]).to_numpy()
