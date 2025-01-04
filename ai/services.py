@@ -150,6 +150,8 @@ class Evaluation:
 
         results = []
         for product in products:
+            primary_image = ExternalProductImage.objects.using('external').filter(product=product, is_primary=True).first()
+            image_url = primary_image.image.url if primary_image else None
             # Combine product data
             product_info = {
                 "id": product.id,
@@ -158,6 +160,7 @@ class Evaluation:
                 "price": product.price,
                 "count_exist": product.count_exist,
                 "is_available": product.is_available,
+                "image_url": image_url,
             }
             results.append(product_info)
 

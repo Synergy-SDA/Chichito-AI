@@ -62,3 +62,19 @@ class ProductFeatureValue(models.Model):
     class Meta:
         managed = False  # This model is managed externally
         db_table = 'product_product_features'  # Use the actual table name
+class ExternalProductImage(models.Model):
+    product = models.ForeignKey(
+        ExternalProduct,
+        related_name='external_images',
+        on_delete=models.CASCADE,
+        db_column='product_id'
+    )
+    image = models.ImageField(upload_to='product_images/')
+    is_primary = models.BooleanField(default=False)
+
+    class Meta:
+        managed = False  
+        db_table = 'product_productimage'  
+
+    def __str__(self):
+        return f"Image for {self.product.name} ({'Primary' if self.is_primary else 'Secondary'})"
