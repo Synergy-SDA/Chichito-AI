@@ -150,8 +150,17 @@ class Evaluation:
 
         results = []
         for product in products:
-            primary_image = ExternalProductImage.objects.using('external').filter(product=product, is_primary=True).first()
-            image_url = primary_image.image.url if primary_image else None
+            product_images = ExternalProductImage.objects.using('external').filter(product=product)
+            images = [
+                {
+                    "image": image.image.url,
+                    "is_primary": image.is_primary,
+                }
+                for image in product_images
+            ]
+            primary_image = next((img["image"] for img in images if img["is_primary"]), None)
+            if not primary_image and images:
+                primary_image = images[0]["image"]
             # Combine product data
             product_info = {
                 "id": product.id,
@@ -160,7 +169,8 @@ class Evaluation:
                 "price": product.price,
                 "count_exist": product.count_exist,
                 "is_available": product.is_available,
-                "image_url": image_url,
+                "images": images,  # Add all images
+                "primary_image": primary_image,  # Add the primary image
             }
             results.append(product_info)
 
