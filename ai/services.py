@@ -153,7 +153,7 @@ class Evaluation:
             product_images = ExternalProductImage.objects.using('external').filter(product=product)
             images = [
                 {
-                    "image": image.image.url,
+                    "image": f"https://storage.c2.liara.space/chichito-cloud/{image.image.url}",
                     "is_primary": image.is_primary,
                 }
                 for image in product_images
