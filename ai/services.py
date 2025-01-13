@@ -142,7 +142,7 @@ class Evaluation:
             prediction = self.model.predict([product.reshape(1, -1), repeated_user_data_np])
             predictions.append(prediction[0][0])
 
-        top_predictions = np.argsort(-np.array(predictions))[:10]
+        top_predictions = np.argsort(-np.array(predictions))[:9]
         top_products = self.encoded_products_data.iloc[top_predictions]
 
         product_ids = top_products["id"].tolist()
